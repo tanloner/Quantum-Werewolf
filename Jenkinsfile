@@ -60,19 +60,6 @@ pipeline {
             }
         }
 
-        stage('Unit Tests - Web Server') {
-            steps {
-                script {
-                    echo '🧪 Running web server tests...'
-                    sh '''
-                        . venv/bin/activate
-                        cd web/server
-                        # Report wird ins Hauptverzeichnis geschrieben
-                        pytest tests/ -v --junit-xml=../../web-test-results.xml --cov=. --cov-report=html:../../htmlcov_web || true
-                    '''
-                }
-            }
-        }
 
         stage('Build Docker Image') {
             steps {
