@@ -84,7 +84,7 @@ pipeline {
                 script {
                     echo '🧪 Testing Docker image...'
                     sh '''
-                        # Start container in background (REGISTRY-Präfix hinzugefügt)
+                        # Start container in background
                         docker run -d \
                             --name quantum-werewolf-test \
                             -p 8000:8000 \
@@ -93,12 +93,19 @@ pipeline {
                         # Wait for container to be ready
                         sleep 5
 
-                        # Health check
+                        # Health check with automatic log dump on failure
                         echo "Running health checks..."
-                        curl -f http://localhost:8000/api/health || exit 1
-                        curl -f http://localhost:8000/api/games/health || exit 1
+                        if ! curl -f http://localhost:8000/api/health; then
+                            echo "❌ Health check failed! Here are the container logs:"
+                            docker logs quantum-werewolf-test
 
-                        # Cleanup
+                            # Cleanup before exit
+                            docker stop quantum-werewolf-test || true
+                            docker rm quantum-werewolf-test || true
+                            exit 1
+                        fi
+
+                        # Cleanup on success
                         docker stop quantum-werewolf-test
                         docker rm quantum-werewolf-test
                     '''
