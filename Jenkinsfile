@@ -84,28 +84,32 @@ pipeline {
                 script {
                     echo '🧪 Testing Docker image...'
                     sh '''
-                        # Start container in background
+                        # 1. Vorsorglich aufräumen (falls ein alter Build gecrasht ist)
+                        docker stop quantum-werewolf-test || true
+                        docker rm quantum-werewolf-test || true
+
+                        # 2. Container im Hintergrund starten
                         docker run -d \
                             --name quantum-werewolf-test \
                             -p 8000:8000 \
                             ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
 
-                        # Wait for container to be ready
+                        # Warten, bis der Container hochgefahren ist
                         sleep 5
 
-                        # Health check with automatic log dump on failure
+                        # 3. Health check mit automatischem Log-Dump bei Fehler
                         echo "Running health checks..."
                         if ! curl -f http://localhost:8000/api/health; then
                             echo "❌ Health check failed! Here are the container logs:"
                             docker logs quantum-werewolf-test
 
-                            # Cleanup before exit
+                            # Cleanup vor dem Beenden des Skripts
                             docker stop quantum-werewolf-test || true
                             docker rm quantum-werewolf-test || true
                             exit 1
                         fi
 
-                        # Cleanup on success
+                        # 4. Standard-Cleanup bei Erfolg
                         docker stop quantum-werewolf-test
                         docker rm quantum-werewolf-test
                     '''
