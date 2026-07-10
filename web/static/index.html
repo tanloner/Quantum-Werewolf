@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quantum Werewolf</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="app">
+        <!-- Background animation -->
+        <div class="background">
+            <div class="stars"></div>
+            <div class="quantum-waves"></div>
+        </div>
+
+        <!-- Header -->
+        <header class="header">
+            <h1 class="logo">
+                <span class="quantum">Quantum</span>
+                <span class="werewolf">Werewolf</span>
+            </h1>
+            <div class="sound-toggle" id="soundToggle" title="Toggle sounds">
+                <svg class="icon-sound-on" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>
+                </svg>
+                <svg class="icon-sound-off hidden" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/>
+                </svg>
+            </div>
+        </header>
+
+        <!-- Main content area -->
+        <main class="main-content">
+            <!-- Home View -->
+            <section id="view-home" class="view active">
+                <div class="card home-card">
+                    <h2>Welcome to the Quantum Realm</h2>
+                    <p class="subtitle">Where roles exist in superposition until observed</p>
+
+                    <div class="button-group">
+                        <button class="btn btn-primary" id="btnCreateGame">
+                            Create New Game
+                        </button>
+                        <button class="btn btn-secondary" id="btnJoinGame">
+                            Join Game
+                        </button>
+                    </div>
+
+                    <div class="info-box">
+                        <h3>How to Play</h3>
+                        <ul>
+                            <li>All players exist in a quantum superposition of all roles</li>
+                            <li>The Seer's observation collapses a player's wavefunction</li>
+                            <li>Death reveals your true role</li>
+                            <li>Coordinate via voice chat (Discord, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Create Game View -->
+            <section id="view-create" class="view">
+                <div class="card">
+                    <h2>Create New Game</h2>
+                    <form id="formCreate" class="form">
+                        <div class="form-group">
+                            <label for="hostName">Your Name</label>
+                            <input type="text" id="hostName" name="hostName" maxlength="30" required
+                                   placeholder="Enter your name">
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" class="btn btn-primary">Create Game</button>
+                            <button type="button" class="btn btn-ghost" id="btnBackFromCreate">Back</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Join Game View -->
+            <section id="view-join" class="view">
+                <div class="card">
+                    <h2>Join Game</h2>
+                    <form id="formJoin" class="form">
+                        <div class="form-group">
+                            <label for="gameCode">Game Code</label>
+                            <input type="text" id="gameCode" name="gameCode" maxlength="6" required
+                                   placeholder="Enter 6-letter code" class="code-input"
+                                   autocomplete="off" autocorrect="off" autocapitalize="characters">
+                        </div>
+                        <div class="form-group">
+                            <label for="playerName">Your Name</label>
+                            <input type="text" id="playerName" name="playerName" maxlength="30" required
+                                   placeholder="Enter your name" autocomplete="name">
+                        </div>
+                        <div class="button-group">
+                            <button type="submit" class="btn btn-primary">Join Game</button>
+                            <button type="button" class="btn btn-ghost" id="btnBackFromJoin">Back</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Lobby View -->
+            <section id="view-lobby" class="view">
+                <div class="card lobby-card">
+                    <h2>Game Lobby</h2>
+                    <div class="game-code-display">
+                        <span class="label">Game Code:</span>
+                        <span class="code" id="lobbyGameCode">------</span>
+                        <button class="btn-icon" id="btnCopyCode" title="Copy code">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="players-list-container">
+                        <h3>Players (<span id="playerCount">0</span>)</h3>
+                        <ul class="players-list" id="playersList"></ul>
+                    </div>
+
+                    <!-- GM Controls (hidden for non-GM) -->
+                    <div class="gm-lobby-controls" id="gmLobbyControls">
+                        <h3>Deck Configuration</h3>
+                        <div class="deck-config">
+                            <div class="deck-role">
+                                <label>Werewolves</label>
+                                <div class="counter">
+                                    <button class="btn-counter" data-role="werewolf" data-delta="-1">-</button>
+                                    <span id="deckWerewolf">2</span>
+                                    <button class="btn-counter" data-role="werewolf" data-delta="1">+</button>
+                                </div>
+                            </div>
+                            <div class="deck-role">
+                                <label>Seer</label>
+                                <div class="counter">
+                                    <button class="btn-counter" data-role="seer" data-delta="-1">-</button>
+                                    <span id="deckSeer">1</span>
+                                    <button class="btn-counter" data-role="seer" data-delta="1">+</button>
+                                </div>
+                            </div>
+                            <div class="deck-role">
+                                <label>Hunter</label>
+                                <div class="counter">
+                                    <button class="btn-counter" data-role="hunter" data-delta="-1">-</button>
+                                    <span id="deckHunter">0</span>
+                                    <button class="btn-counter" data-role="hunter" data-delta="1">+</button>
+                                </div>
+                            </div>
+                            <div class="deck-role">
+                                <label>Cupid</label>
+                                <div class="counter">
+                                    <button class="btn-counter" data-role="cupid" data-delta="-1">-</button>
+                                    <span id="deckCupid">0</span>
+                                    <button class="btn-counter" data-role="cupid" data-delta="1">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="deck-note">Remaining players will be Villagers</p>
+                        <button class="btn btn-primary btn-large" id="btnStartGame">
+                            Start Game
+                        </button>
+                    </div>
+
+                    <p class="waiting-text" id="waitingForGM">Waiting for the host to start the game...</p>
+                </div>
+            </section>
+
+            <!-- Night Phase View -->
+            <section id="view-night" class="view">
+                <div class="phase-indicator night">
+                    <span class="moon-icon">&#127769;</span>
+                    <span>Night <span id="nightTurn">1</span></span>
+                </div>
+
+                <!-- Your Turn -->
+                <div id="nightYourTurn" class="night-content hidden">
+                    <div class="card">
+                        <h2>Your Turn</h2>
+
+                        <!-- Role Probabilities -->
+                        <div class="role-probabilities" id="yourRoleProbabilities">
+                            <h3>Your Role Probabilities</h3>
+                            <div class="prob-bars"></div>
+                        </div>
+
+                        <!-- Werewolf Fellows (if applicable) -->
+                        <div class="werewolf-info hidden" id="werewolfInfo">
+                            <h3>Fellow Werewolves</h3>
+                            <p class="helper-text">Probability they are werewolves (given you are one)</p>
+                            <div class="wolf-list" id="wolfList"></div>
+                        </div>
+
+                        <!-- Action Panels -->
+                        <div class="action-panels" id="actionPanels">
+                            <!-- Seer Action -->
+                            <div class="action-panel hidden" id="seerPanel">
+                                <h3>Seer Action</h3>
+                                <p>Choose a player to observe their role:</p>
+                                <select id="seerTarget" class="select-player">
+                                    <option value="">-- Select Player --</option>
+                                </select>
+                                <button class="btn btn-action btn-seer" id="btnSeerAction">
+                                    Observe
+                                </button>
+                                <div class="seer-result hidden" id="seerResult">
+                                    <span class="target-name"></span> is a
+                                    <span class="target-role"></span>
+                                </div>
+                            </div>
+
+                            <!-- Werewolf Action -->
+                            <div class="action-panel hidden" id="werewolfPanel">
+                                <h3>Werewolf Action</h3>
+                                <p>Choose a victim to attack:</p>
+                                <select id="werewolfTarget" class="select-player">
+                                    <option value="">-- Select Victim --</option>
+                                </select>
+                                <button class="btn btn-action btn-werewolf" id="btnWerewolfAction">
+                                    Attack
+                                </button>
+                            </div>
+
+                            <!-- Cupid Action -->
+                            <div class="action-panel hidden" id="cupidPanel">
+                                <h3>Cupid Action</h3>
+                                <p>Choose two players to become lovers:</p>
+                                <select id="cupidLover1" class="select-player">
+                                    <option value="">-- First Lover --</option>
+                                </select>
+                                <select id="cupidLover2" class="select-player">
+                                    <option value="">-- Second Lover --</option>
+                                </select>
+                                <button class="btn btn-action btn-cupid" id="btnCupidAction">
+                                    Unite in Love
+                                </button>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-primary btn-large" id="btnEndTurn">
+                            End Turn
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Waiting for Others -->
+                <div id="nightWaiting" class="night-content">
+                    <div class="sleeping-screen">
+                        <div class="moon-animation">
+                            <div class="moon">&#127769;</div>
+                            <div class="zzz">z z z</div>
+                        </div>
+                        <h2>The Village is Sleeping...</h2>
+                        <p class="waiting-message" id="waitingMessage">Waiting for other players...</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Day Phase View -->
+            <section id="view-day" class="view">
+                <div class="phase-indicator day">
+                    <span class="sun-icon">&#9728;&#65039;</span>
+                    <span>Day <span id="dayTurn">1</span></span>
+                </div>
+
+                <!-- Death Announcements -->
+                <div class="death-announcements hidden" id="deathAnnouncements">
+                    <h2>During the Night...</h2>
+                    <div class="deaths-list" id="deathsList"></div>
+                </div>
+
+                <!-- Probability Table -->
+                <div class="card stats-card">
+                    <h2>Village Status</h2>
+                    <p class="helper-text">All players shown anonymously. Your row is highlighted.</p>
+                    <div class="stats-table-container">
+                        <table class="stats-table" id="statsTable">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Status</th>
+                                    <th>Wolf</th>
+                                    <th>Seer</th>
+                                    <th>Villager</th>
+                                    <th>Death%</th>
+                                </tr>
+                            </thead>
+                            <tbody id="statsTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+                    <button class="btn btn-secondary" id="btnRefreshStats">
+                        Refresh Stats
+                    </button>
+                </div>
+
+                <!-- GM Day Controls -->
+                <div class="gm-day-controls hidden" id="gmDayControls">
+                    <button class="btn btn-primary" id="btnStartVoting">
+                        Start Voting
+                    </button>
+                    <button class="btn btn-secondary" id="btnStartNight">
+                        Start Night
+                    </button>
+                </div>
+            </section>
+
+            <!-- Voting View -->
+            <section id="view-voting" class="view">
+                <div class="phase-indicator voting">
+                    <span class="vote-icon">&#9995;</span>
+                    <span>Village Vote</span>
+                </div>
+
+                <div class="card voting-card">
+                    <h2>Lynch Vote</h2>
+                    <p>Choose who to eliminate from the village:</p>
+
+                    <div class="vote-options" id="voteOptions">
+                        <!-- Vote buttons populated by JS -->
+                    </div>
+
+                    <div class="vote-actions">
+                        <button class="btn btn-ghost" id="btnAbstain">
+                            Abstain
+                        </button>
+                        <button class="btn btn-primary" id="btnConfirmVote" disabled>
+                            Confirm Vote
+                        </button>
+                    </div>
+
+                    <div class="vote-progress">
+                        <span>Votes: <span id="votesCount">0</span>/<span id="votesTotal">0</span></span>
+                        <span class="separator">|</span>
+                        <span>Confirmed: <span id="confirmCount">0</span>/<span id="confirmTotal">0</span></span>
+                    </div>
+
+                    <!-- GM Voting Controls -->
+                    <div class="gm-voting-controls hidden" id="gmVotingControls">
+                        <button class="btn btn-warning" id="btnEndVoting">
+                            End Voting Now
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Voting Results View -->
+            <section id="view-vote-results" class="view">
+                <div class="card results-card">
+                    <h2>Vote Results</h2>
+                    <div id="voteResultContent">
+                        <!-- Populated by JS -->
+                    </div>
+                    <button class="btn btn-primary" id="btnContinueAfterVote">
+                        Continue
+                    </button>
+                </div>
+            </section>
+
+            <!-- Game Over View -->
+            <section id="view-gameover" class="view">
+                <div class="card gameover-card">
+                    <h2 id="winnerAnnouncement">Game Over</h2>
+                    <div class="winner-display" id="winnerDisplay">
+                        <!-- Winner icon and text -->
+                    </div>
+
+                    <h3>Final Roles</h3>
+                    <ul class="final-roles-list" id="finalRolesList">
+                        <!-- Populated by JS -->
+                    </ul>
+
+                    <button class="btn btn-primary" id="btnNewGame">
+                        New Game
+                    </button>
+                </div>
+            </section>
+
+            <!-- GM Dashboard View -->
+            <section id="view-gm" class="view">
+                <div class="gm-dashboard">
+                    <h2>Game Master Dashboard</h2>
+
+                    <div class="gm-status-panel">
+                        <div class="status-item">
+                            <span class="label">Phase:</span>
+                            <span class="value" id="gmPhase">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Turn:</span>
+                            <span class="value" id="gmTurn">--</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Current Player:</span>
+                            <span class="value" id="gmCurrentPlayer">--</span>
+                        </div>
+                    </div>
+
+                    <div class="gm-players-panel">
+                        <h3>Turn Order</h3>
+                        <div class="turn-order" id="gmTurnOrder">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="gm-actions-panel">
+                        <h3>GM Controls</h3>
+                        <div class="gm-buttons">
+                            <button class="btn btn-warning" id="gmBtnSkipTurn">Skip Turn</button>
+                            <button class="btn btn-primary" id="gmBtnStartVoting">Start Voting</button>
+                            <button class="btn btn-warning" id="gmBtnEndVoting">End Voting</button>
+                            <button class="btn btn-primary" id="gmBtnStartNight">Start Night</button>
+                        </div>
+                    </div>
+
+                    <div class="gm-log-panel">
+                        <h3>Action Log</h3>
+                        <div class="action-log" id="gmActionLog">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="gm-votes-panel hidden" id="gmVotesPanel">
+                        <h3>Current Votes</h3>
+                        <div class="votes-display" id="gmVotesDisplay">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Toast notifications -->
+        <div class="toast-container" id="toastContainer"></div>
+
+        <!-- Loading overlay -->
+        <div class="loading-overlay hidden" id="loadingOverlay">
+            <div class="spinner"></div>
+        </div>
+    </div>
+
+    <!-- Audio elements for notifications -->
+    <audio id="soundTurn" preload="auto">
+        <source src="/static/assets/turn.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundVote" preload="auto">
+        <source src="/static/assets/vote.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="soundDeath" preload="auto">
+        <source src="/static/assets/death.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Socket.IO -->
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+
+    <!-- Application scripts -->
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/socket.js"></script>
+    <script src="/static/js/components/probability-bar.js"></script>
+    <script src="/static/js/components/lobby.js"></script>
+    <script src="/static/js/components/night-phase.js"></script>
+    <script src="/static/js/components/day-phase.js"></script>
+    <script src="/static/js/components/voting.js"></script>
+    <script src="/static/js/components/gm-dashboard.js"></script>
+    <script src="/static/js/app.js"></script>
+</body>
+</html>

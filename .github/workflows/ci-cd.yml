@@ -1,0 +1,124 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 2 * * *'
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: quantum-werewolf
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Code Quality Checks
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 pylint
+
+      - name: Run flake8
+        run: |
+          flake8 quantumwerewolf/ web/server/ tests/ --max-line-length=120 --ignore=E501,W503 || true
+
+      - name: Run pylint
+        run: |
+          pylint quantumwerewolf/ web/server/ --disable=R,C --exit-zero || true
+
+  test:
+    runs-on: ubuntu-latest
+    name: Tests - Python 3.11
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+          pip install -r web/server/requirements.txt
+          pip install pytest pytest-cov pytest-asyncio
+
+      - name: Run backend tests
+        run: |
+          pytest tests/ -v --junit-xml=backend-test-results.xml --cov=quantumwerewolf --cov-report=xml
+
+      - name: Run web server tests
+        run: |
+          pytest web/server/tests/ -v --junit-xml=web-test-results.xml --cov=web/server --cov-report=xml --cov-append
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+
+  docker:
+    runs-on: ubuntu-latest
+    name: Build Docker Image
+    needs: [lint, test]
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          tags: quantum-werewolf:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          docker build -t quantum-werewolf:test .
+          docker run -d --name qw-test -p 8000:8000 quantum-werewolf:test
+          sleep 5
+          curl -f http://localhost:8000/api/health || exit 1
+          docker stop qw-test
+
+  security:
+    runs-on: ubuntu-latest
+    name: Security Scan
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+

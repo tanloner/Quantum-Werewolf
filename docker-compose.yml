@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  quantum-werewolf:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: quantum-werewolf-dev
+    ports:
+      - "8000:8000"
+    environment:
+      DEBUG: "true"
+      CORS_ORIGINS: "*"
+      PORT: "8000"
+      HOST: "0.0.0.0"
+      PUBLIC_HOST: "localhost:8000"
+      USE_HTTPS: "false"
+    volumes:
+      - ./web/server:/app/server
+      - ./quantumwerewolf:/app/quantumwerewolf
+      - ./logs:/app/logs
+      - ./debug.log:/app/debug.log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - quantum-network
+    restart: unless-stopped
+    depends_on:
+      - quantum-werewolf-db
+
+  quantum-werewolf-db:
+    image: postgres:15-alpine
+    container_name: quantum-werewolf-db
+    environment:
+      POSTGRES_DB: quantum_werewolf
+      POSTGRES_USER: qw_user
+      POSTGRES_PASSWORD: qw_password
+    volumes:
+      - quantum-db-data:/var/lib/postgresql/data
+    networks:
+      - quantum-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U qw_user -d quantum_werewolf"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  quantum-network:
+    driver: bridge
+
+volumes:
+  quantum-db-data:
+    driver: local

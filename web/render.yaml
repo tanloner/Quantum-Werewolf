@@ -1,0 +1,24 @@
+# Render.com deployment configuration
+services:
+  - type: web
+    name: quantum-werewolf
+    runtime: python
+    buildCommand: pip install -r server/requirements.txt
+    startCommand: cd server && python main.py
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: PUBLIC_HOST
+        fromService:
+          type: web
+          name: quantum-werewolf
+          property: host
+      - key: USE_HTTPS
+        value: true
+      - key: CORS_ORIGINS
+        value: "*"
+    healthCheckPath: /api/games/health
