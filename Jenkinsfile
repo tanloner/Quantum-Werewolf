@@ -27,58 +27,34 @@ pipeline {
             }
         }
 
-        stage('Setup') {
+        stage('Python Tests (via Docker)') {
             steps {
                 script {
-                    echo '📦 Setting up environment...'
+                    echo '🧪 Running Setup, Linting and Tests inside Python Docker container...'
                     sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install --upgrade pip setuptools wheel
-                    '''
-                }
-            }
-        }
+                        docker run --rm \
+                            -v "${WORKSPACE}:/workspace" \
+                            -w /workspace \
+                            python:3.11-slim \
+                            bash -c "
+                                echo '📦 Installing dependencies...' &&
+                                pip install --upgrade pip setuptools wheel &&
+                                pip install -e . &&
+                                pip install -r web/server/requirements.txt pytest pytest-cov pytest-asyncio flake8 pylint &&
 
-        stage('Install Dependencies') {
-            steps {
-                script {
-                    echo '📥 Installing dependencies...'
-                    sh '''
-                        . venv/bin/activate
-                        pip install -e .
-                        pip install -r web/server/requirements.txt
-                        pip install pytest pytest-cov pytest-asyncio
-                    '''
-                }
-            }
-        }
+                                echo '🔍 Running code quality checks...' &&
+                                flake8 quantumwerewolf/ web/server/ tests/ --max-line-length=120 --ignore=E501,W503 || true &&
+                                pylint quantumwerewolf/ --disable=R,C --exit-zero || true &&
 
-        stage('Lint') {
-            steps {
-                script {
-                    echo '🔍 Running code quality checks...'
-                    sh '''
-                        . venv/bin/activate
-                        pip install pylint flake8
-                        echo "Running flake8..."
-                        flake8 quantumwerewolf/ web/server/ tests/ --max-line-length=120 --ignore=E501,W503 || true
-                        echo "Running pylint..."
-                        pylint quantumwerewolf/ --disable=R,C --exit-zero || true
-                    '''
-                }
-            }
-        }
+                                echo '🧪 Running backend tests...' &&
+                                cd tests &&
+                                pytest test_backend.py -v --junit-xml=../backend-test-results.xml --cov=quantumwerewolf --cov-report=html:../htmlcov_backend || true &&
+                                cd .. &&
 
-        stage('Unit Tests - Backend') {
-            steps {
-                script {
-                    echo '🧪 Running backend tests...'
-                    sh '''
-                        . venv/bin/activate
-                        cd tests
-                        # Report wird ins Hauptverzeichnis geschrieben
-                        pytest test_backend.py -v --junit-xml=../backend-test-results.xml --cov=quantumwerewolf --cov-report=html:../htmlcov_backend || true
+                                echo '🧪 Running web server tests...' &&
+                                cd web/server &&
+                                pytest tests/ -v --junit-xml=../../web-test-results.xml --cov=. --cov-report=html:../../htmlcov_web || true
+                            "
                     '''
                 }
             }
