@@ -17,7 +17,7 @@ COPY web/server/requirements.txt ./web_requirements.txt
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
-    pip install --no-cache-dir -e . && \
+    pip install --no-cache-dir . && \
     pip install --no-cache-dir -r web_requirements.txt
 
 # Stage 2: Runtime
@@ -60,6 +60,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 # Expose port
 EXPOSE 8000
 
+ENV PYTHONPATH=/app
 # Start the application
 WORKDIR /app/server
 CMD ["python", "-m", "uvicorn", "main:socket_app", "--host", "0.0.0.0", "--port", "8000"]
