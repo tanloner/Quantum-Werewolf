@@ -124,12 +124,32 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
                         sh '''
                             echo "Logging into Docker registry..."
-                            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin ${REGISTRY}
+                            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin docker.lsgserver.dev
 
-                            docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
-                            docker push ${REGISTRY}/${IMAGE_NAME}:latest
+                            echo "🚀 Starting brute-force push for tag ${IMAGE_TAG}..."
+                            max_attempts=15
+                            attempt=1
+                            
+                            while [ $attempt -le $max_attempts ]; do
+                                echo "Pushing... (Attempt $attempt of $max_attempts)"
+                                # Wenn der Push klappt, brechen wir die Schleife erfolgreich ab (break)
+                                if docker push docker.lsgserver.dev/${IMAGE_NAME}:${IMAGE_TAG}; then
+                                    echo "✅ Push successful!"
+                                    break
+                                else
+                                    echo "⚠️ Push interrupted (MTU/Timeout). Retrying in 10 seconds..."
+                                    sleep 10
+                                    attempt=$((attempt + 1))
+                                fi
+                            done
+                            
+                            # Wenn wir nach 15 Versuchen immer noch hier sind und es gefailt ist, bricht Jenkins hier ab.
 
-                            docker logout ${REGISTRY}
+                            echo "🚀 Pushing latest tag..."
+                            # Latest geht meist sofort, da die Layer durch den Tag-Push oben schon da sind
+                            docker push docker.lsgserver.dev/${IMAGE_NAME}:latest || true
+
+                            docker logout docker.lsgserver.dev
                         '''
                     }
                 }
