@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         // Angepasst an deine Custom Registry und bestehende Credentials
-        REGISTRY = '10.111.54.64'
+        REGISTRY = 'docker.lsgserver.dev'
         REGISTRY_CREDENTIALS = 'registry-auth'
         IMAGE_NAME = 'quantum-werewolf'
         IMAGE_TAG = "${BUILD_NUMBER}"
