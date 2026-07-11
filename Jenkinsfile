@@ -118,9 +118,6 @@ pipeline {
         }
 
         stage('Push Docker Image') {
-            when {
-                branch 'main' // Ggf. auf 'master' anpassen, falls dein Branch so heißt
-            }
             steps {
                 script {
                     echo '📤 Pushing Docker image to registry...'
@@ -129,7 +126,6 @@ pipeline {
                             echo "Logging into Docker registry..."
                             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin ${REGISTRY}
 
-                            # REGISTRY-Präfix hinzugefügt
                             docker push ${REGISTRY}/${IMAGE_NAME}:${IMAGE_TAG}
                             docker push ${REGISTRY}/${IMAGE_NAME}:latest
 
@@ -140,7 +136,7 @@ pipeline {
             }
         }
 
-stage('Generate Reports') {
+    stage('Generate Reports') {
             steps {
                 script {
                     echo '📊 Generating test reports...'
