@@ -1,25 +1,5 @@
 pipeline {
-    agent {
-        kubernetes {
-            yaml """
-kind: Pod
-spec:
-  containers:
-  - name: docker
-    image: docker:dind
-    args: ['--mtu=1400', '--insecure-registry=nexus.registry-proxy.svc.cluster.local:80']
-    securityContext:
-      privileged: true
-    volumeMounts:
-    - name: dind-storage
-      mountPath: /var/lib/docker
-  volumes:
-  - name: dind-storage
-    emptyDir: {}
-        """
-        }
-    }
-
+    agent any
 
     options {
         timestamps()
@@ -29,7 +9,7 @@ spec:
 
     environment {
         // Angepasst an deine Custom Registry und bestehende Credentials
-        REGISTRY = 'nexus.registry-proxy.svc.cluster.local:80'
+        REGISTRY = '11.111.54.64'
         REGISTRY_CREDENTIALS = 'registry-auth'
         IMAGE_NAME = 'quantum-werewolf'
         IMAGE_TAG = "${BUILD_NUMBER}"
