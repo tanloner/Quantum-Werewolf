@@ -140,12 +140,12 @@ pipeline {
             }
         }
 
-        stage('Generate Reports') {
+stage('Generate Reports') {
             steps {
                 script {
                     echo '📊 Generating test reports...'
                     sh '''
-                        . venv/bin/activate
+                        # venv/bin/activate entfernt, da wir es nicht mehr nutzen
                         ls -la *.xml 2>/dev/null || true
                     '''
                 }
@@ -158,10 +158,12 @@ pipeline {
             script {
                 echo '🧹 Cleaning up...'
 
-                // Archive test results
+                // Archive test results (schlägt nicht fehl, auch wenn keine XMLs da sind)
                 junit allowEmptyResults: true, testResults: '**/test-results.xml,**/backend-test-results.xml,**/web-test-results.xml'
 
-                // Archive Backend Coverage
+                // Die HTML Coverage Reports sind auskommentiert, bis das
+                // "HTML Publisher Plugin" in Jenkins installiert wurde.
+                /*
                 publishHTML([
                     allowMissing: true,
                     alwaysLinkToLastBuild: true,
@@ -171,7 +173,6 @@ pipeline {
                     reportName: 'Backend Coverage Report'
                 ])
 
-                // Archive Web Coverage
                 publishHTML([
                     allowMissing: true,
                     alwaysLinkToLastBuild: true,
@@ -180,6 +181,7 @@ pipeline {
                     reportFiles: 'index.html',
                     reportName: 'Web Coverage Report'
                 ])
+                */
 
                 // Clean workspace
                 deleteDir()
