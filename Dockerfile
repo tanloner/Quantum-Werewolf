@@ -1,4 +1,4 @@
-# Stage 1: Builder
+# Stage 1: Builder (Bleibt gleich, hier wird nur gebaut, nicht das finale Image erzeugt)
 FROM python:3.11-slim as builder
 
 WORKDIR /build
@@ -12,9 +12,10 @@ COPY pyproject.toml ./
 COPY quantumwerewolf/ ./quantumwerewolf/
 COPY web/server/requirements.txt ./web_requirements.txt
 
-# Statt direkt zu installieren, bauen wir Wheels (gepackte Archive)
+# Alle Abhängigkeiten als gepackte Archive (Wheels) vorbereiten
 RUN pip wheel --no-cache-dir --wheel-dir=/wheels -r web_requirements.txt
 RUN pip wheel --no-cache-dir --wheel-dir=/wheels .
+
 
 # Stage 2: Runtime
 FROM python:3.11-slim
@@ -25,18 +26,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Kopiere die Wheels (das ist temporär und bläht das finale Image nicht auf, wenn wir sie danach löschen)
+# Wir holen uns die gebauten Wheels aus der Builder-Stage
 COPY --from=builder /wheels /wheels
 
-# Layer aufteilen: Wir installieren die Abhängigkeiten in mehreren Schritten.
-# Zuerst die Standard-Requirements
-RUN pip install --no-cache-dir /wheels/uvicorn*.whl /wheels/fastapi*.whl || true
-# Dann den Rest der externen Bibliotheken
-RUN pip install --no-cache-dir /wheels/*.whl 
+# EXTREM ZERSTÜCKELT: Wir erzwingen viele kleine Layer, indem wir nach dem Alphabet installieren.
+# Jedes RUN ist ein eigener Layer, der einzeln über das Netzwerk zu Nexus geschoben wird.
+RUN bash -c "ls /wheels/[a-e]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[a-e]*.whl || true"
+RUN bash -c "ls /wheels/[f-j]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[f-j]*.whl || true"
+RUN bash -c "ls /wheels/[k-o]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[k-o]*.whl || true"
+RUN bash -c "ls /wheels/[p-t]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[p-t]*.whl || true"
+RUN bash -c "ls /wheels/[u-z]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[u-z]*.whl || true"
 
-# Danach räumen wir den Wheel-Ordner auf, um Platz zu sparen
+# Fallback-Layer für alles, was übrig bleibt (z.B. Dateien die mit Zahlen oder Großbuchstaben anfangen)
+RUN pip install --no-cache-dir /wheels/*.whl || true
+
+# Den temporären Ordner wieder löschen
 RUN rm -rf /wheels
 
+# Der Code wird auch einzeln kopiert (3 separate Layer)
 COPY quantumwerewolf/ ./quantumwerewolf/
 COPY web/server/ ./server/
 COPY web/static/ ./static/
