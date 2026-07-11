@@ -29,16 +29,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Wir holen uns die gebauten Wheels aus der Builder-Stage
 COPY --from=builder /wheels /wheels
 
-# EXTREM ZERSTÜCKELT: Wir erzwingen viele kleine Layer, indem wir nach dem Alphabet installieren.
-# Jedes RUN ist ein eigener Layer, der einzeln über das Netzwerk zu Nexus geschoben wird.
-RUN bash -c "ls /wheels/[a-e]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[a-e]*.whl || true"
-RUN bash -c "ls /wheels/[f-j]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[f-j]*.whl || true"
-RUN bash -c "ls /wheels/[k-o]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[k-o]*.whl || true"
-RUN bash -c "ls /wheels/[p-t]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[p-t]*.whl || true"
-RUN bash -c "ls /wheels/[u-z]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[u-z]*.whl || true"
+RUN bash -c "ls /wheels/pydantic_core*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/pydantic_core*.whl || true"
 
-# Fallback-Layer für alles, was übrig bleibt (z.B. Dateien die mit Zahlen oder Großbuchstaben anfangen)
-RUN pip install --no-cache-dir /wheels/*.whl || true
+# 2. Extrem feingranulare Zerstückelung (inklusive Großbuchstaben, falls ein Paket so anfängt)
+RUN bash -c "ls /wheels/[a-cA-C]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[a-cA-C]*.whl || true"
+RUN bash -c "ls /wheels/[d-fD-F]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[d-fD-F]*.whl || true"
+RUN bash -c "ls /wheels/[g-iG-I]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[g-iG-I]*.whl || true"
+RUN bash -c "ls /wheels/[j-lJ-L]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[j-lJ-L]*.whl || true"
+RUN bash -c "ls /wheels/[m-oM-O]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[m-oM-O]*.whl || true"
+
+# 'p' ist wegen pydantic, pytest etc. sehr schwer, daher spalten wir P nochmal auf:
+RUN bash -c "ls /wheels/[pP]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[pP]*.whl || true"
+RUN bash -c "ls /wheels/[q-sQ-S]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[q-sQ-S]*.whl || true"
+RUN bash -c "ls /wheels/[t-vT-V]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[t-vT-V]*.whl || true"
+
+# Der Rest, inklusive Zahlen
+RUN bash -c "ls /wheels/[w-zW-Z0-9]*.whl >/dev/null 2>&1 && pip install --no-cache-dir /wheels/[w-zW-Z0-9]*.whl || true"
+
+# WICHTIG: KEIN ALLGEMEINER *.whl FALLBACK LAYER MEHR! 
+# Die Regex oben decken das komplette Alphabet und Zahlen ab. 
 
 # Den temporären Ordner wieder löschen
 RUN rm -rf /wheels
